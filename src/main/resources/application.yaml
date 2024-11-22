@@ -1,0 +1,54 @@
+server:
+  port: 8080
+
+springdoc:
+  api-docs:
+    enabled: true
+    version: openapi_3_1
+    path: /v3/api-docs
+
+  swagger-ui:
+    enabled: true
+    config-url: /v3/api-docs/swagger-config
+    path: /swagger-ui.html
+    display-request-duration: true
+
+app:
+  id: "GWE"
+  name: "GOT Web ERP"
+  description: "Système de gestion GOT"
+  version: '@version@'
+  swagger:
+    version: '@version@'
+
+management:
+  endpoints:
+    web:
+      exposure.include: "health,info"
+
+spring:
+  datasource:
+    url: jdbc:postgresql://ep-bitter-river-a2i443rr.eu-central-1.aws.neon.tech/gotweb
+    username: gotweb_owner
+    password: Z4cokTWpELq7
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+
+
+logging:
+  pattern:
+    console: "%boldGreen(%d{dd-MM-yyyy HH:mm:ss.SSS}) %highlight(%-5level) %magenta([%thread]) --- %logger{36} - %X{id} : %replace(%msg){'[\r\n]', ''}%nopex%n%boldRed(%throwable{3})"
+  level:
+    root: INFO
+    erp: DEBUG
+    http: TRACE
+#    org.hibernate.SQL: DEBUG
+  group:
+    erp: fr.mh.erp
+
