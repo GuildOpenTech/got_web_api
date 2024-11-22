@@ -1,4 +1,4 @@
-package org.got.erp.entity;
+package org.got.erp.users.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

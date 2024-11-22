@@ -1,6 +1,6 @@
-package org.got.erp.repository;
+package org.got.erp.users.repository;
 
-import org.got.erp.entity.User;
+import org.got.erp.users.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

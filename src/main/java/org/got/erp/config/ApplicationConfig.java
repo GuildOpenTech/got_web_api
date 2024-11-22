@@ -5,7 +5,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@EntityScan(basePackages = "org.got.erp.entity")
-@ComponentScan(basePackages = "org.got.erp.repository")
+@EntityScan(basePackages = "org.got.erp.users.entity")
+@ComponentScan(basePackages = "org.got.erp.users.repository")
 public class ApplicationConfig {
 }

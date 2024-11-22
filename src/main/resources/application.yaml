@@ -28,9 +28,9 @@ management:
 
 spring:
   datasource:
-    url: jdbc:postgresql://dpg-csuug5l2ng1s73dpt9n0-a.frankfurt-postgres.render.com/gotweb
+    url: jdbc:postgresql://ep-bitter-river-a2i443rr.eu-central-1.aws.neon.tech/gotweb
     username: gotweb_owner
-    password: V7hKclps8FSs4d2cifNOiU7tGBKwC26Z
+    password: Z4cokTWpELq7
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -48,8 +48,7 @@ logging:
     root: INFO
     erp: DEBUG
     http: TRACE
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type: TRACE
+#    org.hibernate.SQL: DEBUG
   group:
     erp: fr.mh.erp
 
