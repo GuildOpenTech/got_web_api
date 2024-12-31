@@ -4,7 +4,7 @@ server:
 springdoc:
   api-docs:
     enabled: true
-    version: openapi_3_1
+    version: OPENAPI_3_1
     path: /v3/api-docs
 
   swagger-ui:
@@ -54,7 +54,16 @@ security:
     secret: EGsC//1KSoidLqXEkgNYA5q4lOZp9K6ztO2KjMzirqf9Npoyic/8ZHivMlyK2M0\nHPDsOZNZ7c26md4TDY5Zddk8xkre4Rm/GwPF5xwKWXpVT3z44z7wzDwsq1a83Hed\nfpY2Ia8Kv9aGh8rUQilzBhECUmzD6Oa7LLwnBWVMy58=
     access-token-validity: 3600
     refresh-token-validity: 86400
-
+    key-validity-seconds: 86400  # 24 heures
+    key-overlap-seconds: 3600    # 1 heure
+    key-rotation-check-ms: 300000  # 5 minutes
+  password:
+    min-length: 8
+    max-length: 32
+    require-special: true
+    require-digit: true
+    require-uppercase: true
+    require-lowercase: true
 
 logging:
   pattern:
@@ -66,4 +75,3 @@ logging:
 #    org.hibernate.SQL: DEBUG
   group:
     erp: fr.mh.erp
-

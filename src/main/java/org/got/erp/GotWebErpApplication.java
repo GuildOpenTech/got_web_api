@@ -3,8 +3,10 @@ package org.got.erp;
 import org.got.erp.usersmanagement.service.TestDataService;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
+@EnableScheduling
 public class GotWebErpApplication {
   private final TestDataService testDataService;
 
