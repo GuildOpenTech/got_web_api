@@ -1,11 +1,9 @@
 package org.got.erp.config;
 
-import org.springframework.boot.autoconfigure.domain.EntityScan;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 @Configuration
-@EntityScan(basePackages = "org.got.erp.users.entity")
-@ComponentScan(basePackages = "org.got.erp.users.repository")
+@EnableJpaAuditing
 public class ApplicationConfig {
 }
