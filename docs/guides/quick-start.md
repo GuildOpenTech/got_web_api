@@ -4,10 +4,11 @@ Ce guide vous aidera à démarrer rapidement avec le projet GOT Web ERP.
 
 ## Prérequis
 
-- Java 17 ou supérieur
+- Java 21 ou supérieur
 - Maven 3.8+
-- PostgreSQL 14+
+- PostgreSQL 17+
 - IDE recommandé : IntelliJ IDEA ou VS Code
+- Extension recommandée pour la documentation : mermaid, markdown
 
 ## Installation
 
@@ -22,9 +23,8 @@ Ce guide vous aidera à démarrer rapidement avec le projet GOT Web ERP.
    - Configurer les informations de connexion dans `application.yml`
 
 3. **Configurer l'environnement**
-   ```bash
-   cp .env.example .env
-   # Éditer .env avec vos paramètres
+   ```
+   # A FAIRE
    ```
 
 ## Démarrage
@@ -82,7 +82,6 @@ got_web_api/
 │   │   └── resources/
 │   └── test/
 ├── docs/
-├── DEVBOOK.md
 └── README.md
 ```
 
@@ -91,6 +90,7 @@ got_web_api/
 ### Conventions de Code
 - Suivre les conventions Java standard
 - Utiliser les annotations Lombok
+- Utiliser les mappers MapStruct
 - Documenter les APIs avec OpenAPI
 
 ### Tests
