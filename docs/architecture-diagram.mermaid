@@ -1,0 +1,56 @@
+graph TB
+    subgraph "Couche Présentation"
+        API[API REST Controllers]
+        SEC[Security Filter]
+        API --> SEC
+    end
+
+    subgraph "Couche Application"
+        UC[Use Cases]
+        AS[Application Services]
+        API --> UC
+        UC --> AS
+    end
+
+    subgraph "Couche Domaine"
+        DOM[Domain Model]
+        REPO[(Repository Interfaces)]
+        AS --> DOM
+        DOM --> REPO
+    end
+
+    subgraph "Couche Infrastructure"
+        DB[(PostgreSQL)]
+        REPOIMPL[Repository Impl]
+        SEC_SERV[Security Services]
+        JWT[JWT Service]
+        CACHE[Cache]
+        
+        REPOIMPL --> DB
+        REPO --> REPOIMPL
+        SEC --> JWT
+        SEC --> SEC_SERV
+        REPOIMPL --> CACHE
+    end
+
+    subgraph "Composants Transverses"
+        LOG[Logging]
+        VAL[Validation]
+        AUDIT[Audit]
+        
+        API --> LOG
+        API --> VAL
+        API --> AUDIT
+    end
+
+classDef presentation fill:#f9f,stroke:#333
+classDef application fill:#bbf,stroke:#333
+classDef domain fill:#bfb,stroke:#333
+classDef infrastructure fill:#fbb,stroke:#333
+classDef transverse fill:#ddd,stroke:#333
+
+class API,SEC presentation
+class UC,AS application
+class DOM,REPO domain
+class DB,REPOIMPL,SEC_SERV,JWT,CACHE infrastructure
+class LOG,VAL,AUDIT transverse

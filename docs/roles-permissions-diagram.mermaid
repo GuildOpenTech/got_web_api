@@ -1,0 +1,51 @@
+classDiagram
+    class User {
+        +Long id
+        +String username
+        +String email
+        +Set~UserRole~ roles
+        +authenticate()
+        +hasPermission(Context, Permission)
+    }
+
+    class UserRole {
+        +Role role
+        +Department department
+        +Context context
+        +Set~Permission~ permissions
+        +isActive()
+        +validatePermissions()
+    }
+
+    class Department {
+        +String name
+        +Set~Context~ contexts
+        +Department parent
+        +Set~Permission~ defaultPermissions
+    }
+
+    class Context {
+        +String name
+        +Department department
+        +ContextType type
+        +validateAccess(User)
+    }
+
+    class Permission {
+        +String name
+        +PermissionType type
+        +boolean isGranted(Context)
+    }
+
+    class Role {
+        +String name
+        +Set~Permission~ basePermissions
+        +boolean allowsMultiple
+    }
+
+    User "1" *-- "many" UserRole : has
+    UserRole "many" *-- "1" Role : assigned
+    UserRole "many" *-- "1" Department : belongs to
+    UserRole "many" *-- "1" Context : scoped to
+    Department "1" *-- "many" Context : contains
+    Role "1" *-- "many" Permission : includes
