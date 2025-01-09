@@ -1,0 +1,79 @@
+Je vais vous expliquer en détail le diagramme de classes qui représente l'architecture de la gestion des rôles et permissions.
+
+Commençons par chaque entité et leurs relations :
+
+1. **User (Utilisateur)**
+   - C'est l'entité centrale du système
+   - Propriétés principales : id, username, email
+   - Elle possède une collection de `UserRole` (relation One-to-Many)
+   - Méthodes importantes :
+     * `authenticate()` : pour l'authentification
+     * `hasPermission(Context, Permission)` : vérifie si l'utilisateur a une permission donnée dans un contexte spécifique
+
+2. **UserRole (Rôle Utilisateur)**
+   - C'est une entité d'association enrichie qui lie :
+     * Un User
+     * Un Role
+     * Un Department
+     * Un Context
+   - Elle contient aussi un ensemble de permissions spécifiques
+   - Cette structure permet d'avoir des rôles contextuels
+   - Par exemple : Sarah peut être "Chef de Projet" (Role) dans le "Département Projets" (Department) pour le "Projet A" (Context)
+   - Méthodes :
+     * `isActive()` : vérifie si le rôle est actif
+     * `validatePermissions()` : valide la cohérence des permissions
+
+3. **Department (Département)**
+   - Représente un département de l'organisation
+   - Contient :
+     * Un nom
+     * Une collection de contextes
+     * Un département parent (hiérarchie)
+     * Des permissions par défaut
+   - Permet de gérer la hiérarchie organisationnelle
+   - Exemple : Département IT > Sous-département Développement
+
+4. **Context (Contexte)**
+   - Représente un contexte d'application des rôles
+   - Propriétés :
+     * Un nom
+     * Un département de rattachement
+     * Un type de contexte
+   - Méthode `validateAccess(User)` : vérifie les droits d'accès
+   - Exemples de contextes :
+     * Un projet spécifique
+     * Une campagne marketing
+     * Un document confidentiel
+
+5. **Permission (Permission)**
+   - Représente une permission atomique dans le système
+   - Propriétés :
+     * Nom de la permission
+     * Type de permission
+   - Méthode `isGranted(Context)` : vérifie si la permission est accordée dans un contexte
+   - Exemple : "EDIT_BUDGET", "VIEW_REPORTS"
+
+6. **Role (Rôle)**
+   - Définit un rôle métier
+   - Contient :
+     * Un nom
+     * Un ensemble de permissions de base
+     * Un flag indiquant si le rôle peut être multiple
+   - Exemple : "Chef de Projet", "Architecte", "RH"
+
+Les relations clés sont :
+- User -(1:N)-> UserRole : un utilisateur peut avoir plusieurs rôles
+- UserRole -(N:1)-> Role : plusieurs utilisateurs peuvent avoir le même rôle
+- UserRole -(N:1)-> Department : un rôle est lié à un département
+- UserRole -(N:1)-> Context : un rôle s'applique dans un contexte
+- Department -(1:N)-> Context : un département contient plusieurs contextes
+- Role -(1:N)-> Permission : un rôle inclut plusieurs permissions
+
+Cette architecture permet :
+1. Une grande flexibilité dans l'attribution des rôles
+2. Une gestion fine des permissions selon le contexte
+3. Le support de structures organisationnelles complexes
+4. La séparation claire des responsabilités
+5. L'évolutivité pour ajouter de nouveaux types de rôles/permissions
+
+Voulez-vous que je détaille davantage certains aspects particuliers de cette architecture ?

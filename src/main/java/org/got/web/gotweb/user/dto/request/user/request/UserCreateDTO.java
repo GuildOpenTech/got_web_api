@@ -1,9 +1,11 @@
-package org.got.web.gotweb.user.dto.request;
+package org.got.web.gotweb.user.dto.request.user.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.Builder;
 
+@Builder
 public record UserCreateDTO(
     @NotBlank(message = "Le nom d'utilisateur est obligatoire")
     @Size(min = 3, max = 50, message = "Le nom d'utilisateur doit contenir entre 3 et 50 caractères")
@@ -19,5 +21,10 @@ public record UserCreateDTO(
 
     String firstName,
     
-    String lastName
-) {}
+    String lastName,
+
+    boolean enabled
+
+
+) {
+}

@@ -10,4 +10,6 @@ public interface ContextMapper {
     ContextMapper INSTANCE = Mappers.getMapper(ContextMapper.class);
 
     ContextResponseDTO toResponseDTO(Context context);
+
+    Context mapToContext(ContextResponseDTO userContext);
 }

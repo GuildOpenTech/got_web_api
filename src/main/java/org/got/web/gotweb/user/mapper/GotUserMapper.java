@@ -4,10 +4,12 @@ import org.got.web.gotweb.user.domain.Context;
 import org.got.web.gotweb.user.domain.Department;
 import org.got.web.gotweb.user.domain.GotUser;
 import org.got.web.gotweb.user.domain.Role;
-import org.got.web.gotweb.user.dto.response.UserResponseDTO;
+import org.got.web.gotweb.user.dto.request.user.response.UserResponseDTO;
+import org.got.web.gotweb.user.dto.request.user.response.UserResponseFullDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
+import org.mapstruct.factory.Mappers;
 
 import java.util.List;
 import java.util.Set;
@@ -15,11 +17,17 @@ import java.util.Set;
 @Mapper(componentModel = "spring")
 public interface GotUserMapper {
 
+    GotUserMapper INSTANCE = Mappers.getMapper(GotUserMapper.class);
+
+    GotUser toGotUser(UserResponseFullDTO userResponseFullDTO);
+
     @Mapping(source = "roles", target = "roles", qualifiedByName = "rolesToStrings")
     @Mapping(source = "contexts", target = "contexts", qualifiedByName = "contextsToStrings")
     @Mapping(source = "departments", target = "departments", qualifiedByName = "departmentsToStrings")
-    UserResponseDTO toResponseDTO(GotUser gotUser);
+    UserResponseFullDTO toResponseFullDTO(GotUser gotUser);
+    List<UserResponseFullDTO> toResponseFullDTOs(List<GotUser> gotUsers);
 
+    UserResponseDTO toResponseDTO(GotUser gotUser);
     List<UserResponseDTO> toResponseDTOs(List<GotUser> gotUsers);
 
     @Named("rolesToStrings")

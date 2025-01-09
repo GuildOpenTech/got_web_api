@@ -1,4 +1,4 @@
-package org.got.web.gotweb.user.dto.request;
+package org.got.web.gotweb.user.dto.request.department;
 
 public record DepartmentUpdateDTO(
     String name,

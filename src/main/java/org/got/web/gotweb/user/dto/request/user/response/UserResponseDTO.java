@@ -1,7 +1,6 @@
-package org.got.web.gotweb.user.dto.response;
+package org.got.web.gotweb.user.dto.request.user.response;
 
 import java.time.LocalDateTime;
-import java.util.Set;
 
 public record UserResponseDTO(
     Long id,
@@ -11,8 +10,5 @@ public record UserResponseDTO(
     String lastName,
     boolean enabled,
     boolean emailVerified,
-    LocalDateTime lastLoginDate,
-    Set<String> roles,
-    Set<String> departments,
-    Set<String> contexts
+    LocalDateTime lastLoginDate
 ) {}

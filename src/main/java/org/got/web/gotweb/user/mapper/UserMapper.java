@@ -1,9 +1,9 @@
 //package org.got.web.gotweb.user.mapper;
 //
 //import org.got.web.gotweb.user.domain.GotUser;
-//import org.got.web.gotweb.user.dto.request.UserCreateDTO;
-//import org.got.web.gotweb.user.dto.request.UserUpdateDTO;
-//import org.got.web.gotweb.user.dto.response.UserResponseDTO;
+//import org.got.web.gotweb.user.dto.request.user.request.UserCreateDTO;
+//import org.got.web.gotweb.user.dto.request.user.request.UserUpdateDTO;
+//import org.got.web.gotweb.user.dto.request.user.response.UserResponseDTO;
 //import org.mapstruct.BeanMapping;
 //import org.mapstruct.Mapper;
 //import org.mapstruct.Mapping;

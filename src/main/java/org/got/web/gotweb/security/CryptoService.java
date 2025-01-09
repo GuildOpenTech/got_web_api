@@ -1,5 +1,6 @@
 package org.got.web.gotweb.security;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -53,5 +54,9 @@ public class CryptoService {
         byte[] pwdBytes = new byte[10];
         secureRandom.nextBytes(pwdBytes);
         return Base64.getEncoder().encodeToString(pwdBytes);
+    }
+
+    public boolean checkPassword(@NotBlank String oldPassword, @NotBlank String password) {
+        return passwordEncoder.matches(oldPassword, password);
     }
 }

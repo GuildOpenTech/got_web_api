@@ -1,8 +1,8 @@
-package org.got.web.gotweb.user.dto.request;
+package org.got.web.gotweb.user.dto.request.role;
 
 import java.util.Set;
 
-public record RoleCreateDTO(
+public record RoleUpdateDTO(
     String name,
     String description,
     Set<String> permissions

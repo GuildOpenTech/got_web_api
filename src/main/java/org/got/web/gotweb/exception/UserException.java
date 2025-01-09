@@ -1,6 +1,10 @@
 package org.got.web.gotweb.exception;
 
-public class UserException {
+public class UserException extends BusinessException {
+
+    public UserException(String message) {
+       super(message);
+    }
 
     public static class UserNotFoundException extends BusinessException {
         public UserNotFoundException(Long id) {
@@ -8,6 +12,10 @@ public class UserException {
         }
         public UserNotFoundException(String username) {
             super("Utilisateur non trouvé avec le username: " + username);
+        }
+
+        public UserNotFoundException(String field, String value) {
+            super("Utilisateur non trouvé avec " + field + ": " + value);
         }
     }
 

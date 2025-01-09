@@ -6,10 +6,7 @@ public enum PermissionType {
     CREATE,
     UPDATE,
     DELETE,
-    ADMIN,
     EXECUTE,
-    MANAGE_USERS,
-    MANAGE_ROLES,
-    MANAGE_PERMISSIONS,
-    CUSTOM
+    CUSTOM,
+    SUPER_ADMIN,
 }

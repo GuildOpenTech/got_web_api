@@ -1,38 +1,56 @@
 package org.got.web.gotweb.user.service;
 
+import lombok.RequiredArgsConstructor;
 import org.got.web.gotweb.exception.DepartmentException.DepartmentNotFoundException;
+import org.got.web.gotweb.exception.PermissionException;
 import org.got.web.gotweb.user.criteria.DepartmentSearchCriteria;
 import org.got.web.gotweb.user.domain.Department;
 import org.got.web.gotweb.user.domain.Permission;
-import org.got.web.gotweb.user.dto.request.DepartmentCreateDTO;
-import org.got.web.gotweb.user.dto.request.DepartmentUpdateDTO;
+import org.got.web.gotweb.user.dto.request.department.DepartmentCreateDTO;
+import org.got.web.gotweb.user.dto.request.department.DepartmentUpdateDTO;
 import org.got.web.gotweb.user.dto.response.DepartmentResponseDTO;
 import org.got.web.gotweb.user.mapper.DepartmentMapper;
 import org.got.web.gotweb.user.repository.DepartmentRepository;
+import org.got.web.gotweb.user.repository.PermissionRepository;
 import org.got.web.gotweb.user.specification.DepartmentSpecification;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class DepartmentService {
     private final DepartmentRepository departmentRepository;
+    private final PermissionRepository permissionRepository;
     private final DepartmentMapper departmentMapper;
 
-    public DepartmentService(DepartmentRepository departmentRepository, DepartmentMapper departmentMapper) {
-        this.departmentRepository = departmentRepository;
-        this.departmentMapper = departmentMapper;
-    }
 
     public DepartmentResponseDTO createDepartment(DepartmentCreateDTO createDTO) {
+        Department parent = null;
+        if (createDTO.parentId() != null) {
+            parent = departmentRepository.findById(createDTO.parentId())
+                    .orElseThrow(() -> new DepartmentNotFoundException(createDTO.parentId()));
+        }
+
+        Set<Permission> defaultPermissions = new HashSet<>();
+        if (createDTO.defaultPermissions() != null) {
+            defaultPermissions = createDTO.defaultPermissions().stream()
+                    .map(permissionId -> permissionRepository.findById(permissionId)
+                            .orElseThrow(() -> new PermissionException.PermissionNotFoundException(permissionId)))
+                    .collect(Collectors.toSet());
+        }
         Department department = new Department();
         department.setName(createDTO.name());
         department.setDescription(createDTO.description());
+        department.setParent(parent);
+        department.setDefaultPermissions(defaultPermissions);
         Department savedDepartment = departmentRepository.save(department);
         return departmentMapper.toResponseDTO(savedDepartment);
     }

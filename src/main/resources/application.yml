@@ -14,8 +14,8 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
   security:
     jwt:
-      secret: ${JWT_SECRET:default_secret_key_which_should_be_replaced_in_production}
-      expiration: 86400000 # 24 heures en millisecondes
+      secret-key: ${JWT_SECRET:votreCleSecreteTresLongueEtComplexePourLaProductionAuMoins256Bits}
+      expiration: ${JWT_EXPIRATION:86400000} # 24 heures en millisecondes
   mail:
     host: localhost
     port: 25
@@ -26,8 +26,8 @@ spring:
         smtp:
           auth: false
           starttls:
-            enable: true
-            required: true
+            enable: false
+            required: false
 
 springdoc:
   api-docs:

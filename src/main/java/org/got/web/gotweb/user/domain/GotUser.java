@@ -10,8 +10,10 @@ import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -21,7 +23,8 @@ import java.util.Set;
 
 @Entity
 @Table(name = "users")
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -30,13 +33,13 @@ public class GotUser {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(name = "username", unique = true, nullable = false)
     private String username;
 
-    @Column(nullable = false)
+    @Column(name = "password", nullable = false)
     private String password;
 
-    @Column(unique = true, nullable = false)
+    @Column(name = "email", unique = true, nullable = false)
     private String email;
 
     @Column(name = "first_name")
@@ -45,32 +48,46 @@ public class GotUser {
     @Column(name = "last_name")
     private String lastName;
 
-    @Column(nullable = false)
+    @Column(name = "enabled", nullable = false)
     private boolean enabled;
 
-    @Column(nullable = false)
+    @Column(name="email_verified", nullable = false)
     private boolean emailVerified;
 
-    @Column(nullable = false)
+    @Column(name = "email_verification_token")
     private String emailVerificationToken;
+
+    @Column(name = "email_verification_token_expires_at")
     private LocalDateTime emailVerificationTokenExpiresAt;
 
+    @Column(name = "reset_password_token")
     private String resetPasswordToken;
+
+    @Column(name = "reset_password_token_expires_at")
     private LocalDateTime resetPasswordTokenExpiresAt;
 
+    @Column(name = "failed_login_attempts")
     private int failedLoginAttempts;
+
+    @Column(name = "last_failed_login_attempt")
     private LocalDateTime lastFailedLoginAttempt;
+
+    @Column(name = "locked_until")
     private LocalDateTime lockedUntil;
 
     @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
 
     @OneToMany(mappedBy = "gotUser")
+    @ToString.Exclude
     private Set<UserRole> userRoles = new HashSet<>();
 
     @PreUpdate
@@ -137,5 +154,17 @@ public class GotUser {
             }
         }
         return contexts;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof GotUser gotUser)) return false;
+        return id != null && id.equals(gotUser.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }
