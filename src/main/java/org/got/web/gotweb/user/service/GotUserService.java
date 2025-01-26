@@ -5,14 +5,16 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.got.web.gotweb.common.annotations.ToLowerCase;
 import org.got.web.gotweb.exception.ContextException;
 import org.got.web.gotweb.exception.DepartmentException;
+import org.got.web.gotweb.exception.PermissionException;
 import org.got.web.gotweb.exception.RoleException;
 import org.got.web.gotweb.exception.TokenException;
 import org.got.web.gotweb.exception.UserException;
 import org.got.web.gotweb.exception.UserRoleException;
 import org.got.web.gotweb.mail.service.EmailService;
-import org.got.web.gotweb.security.CryptoService;
+import org.got.web.gotweb.security.service.CryptoService;
 import org.got.web.gotweb.user.criteria.UserSearchCriteria;
 import org.got.web.gotweb.user.domain.Context;
 import org.got.web.gotweb.user.domain.Department;
@@ -20,15 +22,22 @@ import org.got.web.gotweb.user.domain.GotUser;
 import org.got.web.gotweb.user.domain.Permission;
 import org.got.web.gotweb.user.domain.Role;
 import org.got.web.gotweb.user.domain.UserRole;
-import org.got.web.gotweb.user.dto.request.user.request.UserCreateDTO;
-import org.got.web.gotweb.user.dto.request.user.request.UserRoleAssignDTO;
-import org.got.web.gotweb.user.dto.request.user.request.UserUpdateDTO;
-import org.got.web.gotweb.user.dto.request.user.request.UserUpdatePasswordDTO;
-import org.got.web.gotweb.user.dto.request.user.response.UserResponseFullDTO;
+import org.got.web.gotweb.user.dto.user.request.ResetPasswordDto;
+import org.got.web.gotweb.user.dto.user.request.UserCreateDTO;
+import org.got.web.gotweb.user.dto.user.request.UserRoleAssignToUserDTO;
+import org.got.web.gotweb.user.dto.user.request.UserRolePermissionsDTO;
+import org.got.web.gotweb.user.dto.user.request.UserRoleRemoveDTO;
+import org.got.web.gotweb.user.dto.user.request.UserRoleUpdateValidityDTO;
+import org.got.web.gotweb.user.dto.user.request.UserUpdateDTO;
+import org.got.web.gotweb.user.dto.user.request.UserUpdatePasswordDTO;
+import org.got.web.gotweb.user.dto.user.response.UserResponseFullDTO;
+import org.got.web.gotweb.user.dto.user.response.UserRoleResponseDTO;
 import org.got.web.gotweb.user.mapper.GotUserMapper;
+import org.got.web.gotweb.user.mapper.UserRoleMapper;
 import org.got.web.gotweb.user.repository.ContextRepository;
 import org.got.web.gotweb.user.repository.DepartmentRepository;
 import org.got.web.gotweb.user.repository.GotUserRepository;
+import org.got.web.gotweb.user.repository.PermissionRepository;
 import org.got.web.gotweb.user.repository.RoleRepository;
 import org.got.web.gotweb.user.repository.UserRoleRepository;
 import org.got.web.gotweb.user.specification.UserSpecification;
@@ -40,7 +49,7 @@ import org.springframework.validation.annotation.Validated;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
-import java.util.Set;
+import java.util.Optional;
 
 @Service
 @Validated
@@ -49,12 +58,14 @@ import java.util.Set;
 public class GotUserService {
     private final GotUserRepository userRepository;
     private final GotUserMapper userMapper;
+    private final UserRoleMapper userRoleMapper;
     private final CryptoService cryptoService;
     private final EmailService emailService;
     private final UserRoleRepository userRoleRepository;
     private final RoleRepository roleRepository;
     private final DepartmentRepository departmentRepository;
     private final ContextRepository contextRepository;
+    private final PermissionRepository permissionRepository;
 
     @Transactional
     public GotUser createUser(@Valid UserCreateDTO createUserDto) {
@@ -76,7 +87,7 @@ public class GotUserService {
                 .firstName(createUserDto.firstName())
                 .lastName(createUserDto.lastName())
                 .enabled(createUserDto.enabled())
-//                .emailVerified(false)
+                .emailVerified(false)
                 .createdAt(LocalDateTime.now())
                 .failedLoginAttempts(0)
                 .userRoles(new HashSet<>())
@@ -97,28 +108,22 @@ public class GotUserService {
 
     @Transactional
     public GotUser updateUser(Long id, @Valid UserUpdateDTO updateUserDto) {
-        GotUser user = userRepository.findById(id)
-                .orElseThrow(() -> new UserException.UserNotFoundException(id));
+        GotUser user = validateUsernameUserId(updateUserDto.username(), id);
 
         if (StringUtils.isNotBlank(updateUserDto.username()) &&
-            !user.getUsername().equals(updateUserDto.username()) &&
-            userRepository.existsByUsername(updateUserDto.username())) {
-            throw new UserException.UserAlreadyExistsException("username", updateUserDto.username());
-        }
-
-        if (StringUtils.isNotBlank(updateUserDto.email()) &&
-            !user.getEmail().equals(updateUserDto.email()) &&
-            userRepository.existsByEmail(updateUserDto.email())) {
-            throw new UserException.UserAlreadyExistsException("email", updateUserDto.email());
-        }
-
-        // Mise à jour des champs
-        if (StringUtils.isNotBlank(updateUserDto.username())) {
+            !user.getUsername().equalsIgnoreCase(updateUserDto.username())) {
+            if (userRepository.existsByUsername(updateUserDto.username())) {
+                throw new UserException.UserAlreadyExistsException("username", updateUserDto.username());
+            }
             user.setUsername(updateUserDto.username());
         }
 
-        if (StringUtils.isNotBlank(updateUserDto.email())) {
-            user.setEmail(updateUserDto.email());
+        if (StringUtils.isNotBlank(updateUserDto.email())
+                && !user.getEmail().equalsIgnoreCase(updateUserDto.email())) {
+            if(userRepository.existsByEmail(updateUserDto.email())){
+                throw new UserException.UserAlreadyExistsException("email", updateUserDto.email());
+            }
+            user.setEmail(updateUserDto.email().toLowerCase());
             user.setEmailVerified(false);
             String verificationToken = cryptoService.generateEmailVerificationToken();
             user.setEmailVerificationToken(verificationToken);
@@ -131,6 +136,9 @@ public class GotUserService {
         }
         if (StringUtils.isNotBlank(updateUserDto.lastName())) {
             user.setLastName(updateUserDto.lastName());
+        }
+        if (updateUserDto.enabled() != null) {
+            user.setEnabled(updateUserDto.enabled());
         }
 
         return userRepository.save(user);
@@ -157,26 +165,29 @@ public class GotUserService {
     }
 
     @Transactional(readOnly = true)
+    public GotUser getUserByUsername(@NotBlank @ToLowerCase String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserException.UserNotFoundException(username));
+    }
+
+    @Transactional(readOnly = true)
+    public GotUser getUserByEmail(@NotBlank @ToLowerCase String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserException.UserNotFoundException(email));
+    }
+
+    @Transactional(readOnly = true)
     public Page<UserResponseFullDTO> searchUsers(UserSearchCriteria criteria, Pageable pageable) {
         return userRepository.findAll(UserSpecification.createSpecification(criteria), pageable)
                 .map(userMapper::toResponseFullDTO);
     }
 
-    public GotUser updateUserRole(Long userId, Set<UserRole> userRoles) {
-        GotUser user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserException.UserNotFoundException(userId));
-
-        //TODO: Vérifier les rôles
-
-        return userRepository.save(user);
-    }
-
     public GotUser verifyEmail(@NotBlank String token) {
         GotUser user = userRepository.findByEmailVerificationToken(token)
-                .orElseThrow(() -> new TokenException.InvalidTokenException(token, TokenException.VERIFICATION_EMAIL));
+                .orElseThrow(() -> new TokenException.InvalidTokenException(token, TokenException.VERIFICATION_EMAIL, null));
 
         if (user.getEmailVerificationTokenExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new TokenException.TokenExpiredException(token, TokenException.VERIFICATION_EMAIL);
+            throw new TokenException.TokenExpiredException(token, TokenException.VERIFICATION_EMAIL, null);
         }
 
         user.setEmailVerified(true);
@@ -185,26 +196,6 @@ public class GotUserService {
 
         return userRepository.save(user);
     }
-
-//    public GotUser verifyEmail(@NotBlank String email, @NotBlank String token) {
-//        GotUser user = userRepository.findByEmail(email)
-//                .orElseThrow(() -> new UserException.UserNotFoundException("email", email));
-//
-//        if(user.isEmailVerified()) {
-//            throw new UserException("L'email est déjà vérifié");
-//        }
-//
-//        if (user.getEmailVerificationTokenExpiresAt() == null || user.getEmailVerificationTokenExpiresAt().isBefore(LocalDateTime.now())) {
-//            throw new TokenException.TokenExpiredException(token, TokenException.VERIFICATION_EMAIL);
-//        }
-//
-//        user.setEmailVerified(true);
-//        user.setEmailVerificationToken(null);
-//        user.setEmailVerificationTokenExpiresAt(null);
-//
-//        return userRepository.save(user);
-//    }
-
 
     public GotUser changePassword(Long userId, @Valid UserUpdatePasswordDTO updatePasswordDto) {
         GotUser user = userRepository.findById(userId)
@@ -226,15 +217,15 @@ public class GotUserService {
         return userRepository.save(user);
     }
 
-    public GotUser resetPassword(@NotBlank String token, @NotBlank String newPassword) {
-        GotUser user = userRepository.findByResetPasswordToken(token)
-                .orElseThrow(() -> new TokenException.InvalidTokenException(token, TokenException.RESET_PASSWORD));
+    public GotUser resetPassword(ResetPasswordDto dto) {
+        GotUser user = userRepository.findByResetPasswordToken(dto.token())
+                .orElseThrow(() -> new TokenException.InvalidTokenException(dto.token(), TokenException.RESET_PASSWORD, null));
 
         if (user.getResetPasswordTokenExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new TokenException.TokenExpiredException(token, TokenException.RESET_PASSWORD);
+            throw new TokenException.TokenExpiredException(dto.token(), TokenException.RESET_PASSWORD, null);
         }
 
-        user.setPassword(cryptoService.hashPassword(newPassword));
+        user.setPassword(cryptoService.hashPassword(dto.newPassword()));
         user.setResetPasswordToken(null);
         user.setResetPasswordTokenExpiresAt(null);
         GotUser savedUser = userRepository.save(user);
@@ -247,6 +238,14 @@ public class GotUserService {
         }
 
         return savedUser;
+    }
+
+    public void verifyPasswordResetToken(String token) {
+        Optional<GotUser> user = userRepository.findByResetPasswordToken(token);
+        boolean exist = user.isPresent() && user.get().getResetPasswordTokenExpiresAt().isAfter(LocalDateTime.now());
+        if (!exist) {
+            throw new TokenException.InvalidTokenException(token, TokenException.RESET_PASSWORD, null);
+        }
     }
 
     @Transactional
@@ -264,8 +263,7 @@ public class GotUserService {
 
     @Transactional
     public GotUser toggleUserStatus(Long userId, boolean enabled) {
-        GotUser user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserException.UserNotFoundException(userId));
+        GotUser user = getUserById(userId);
         if(user.isEnabled() == enabled) {
             return user;
         }
@@ -281,127 +279,173 @@ public class GotUserService {
         return userRepository.save(user);
     }
 
+    @Transactional
+    public UserRoleResponseDTO assignUserRoleToUser(Long userId, UserRoleAssignToUserDTO dto) {
+        return userRoleMapper.toResponseDTO(assignUserRoleToUserEntity(userId, dto));
+    }
     /**
      * Assigne un nouveau rôle à un utilisateur dans un contexte spécifique.
      */
     @Transactional
-    public UserRole assignUserRole(UserRoleAssignDTO dto) {
+    public UserRole assignUserRoleToUserEntity(Long userId, UserRoleAssignToUserDTO dto) {
         // Vérification de l'existence de l'utilisateur
-        GotUser user = userRepository.findById(dto.userId())
-                .orElseThrow(() -> new UserException.UserNotFoundException(dto.userId()));
+        GotUser user = validateUsernameUserId(dto.username(), userId);
+        userRoleRepository.findByUserRoleDetails(userId, dto.roleId(), dto.departmentId(), dto.contextId())
+                .ifPresent(userRole -> {throw new UserRoleException.DuplicateRoleException(user.getUsername());});
 
-        // Récupération des entités nécessaires
-        Role role = roleRepository.findById(dto.roleId())
-                .orElseThrow(() -> new RoleException.RoleNotFoundException(dto.roleId()));
-        Department department = departmentRepository.findById(dto.departmentId())
-                .orElseThrow(() -> new DepartmentException.DepartmentNotFoundException(dto.departmentId()));
-        Context context = null;
-        if (dto.contextId() != null) {
-            context = contextRepository.findById(dto.contextId())
+            // Récupération des entités nécessaires
+            Role role = roleRepository.findById(dto.roleId())
+                    .orElseThrow(() -> new RoleException.RoleNotFoundException(dto.roleId()));
+            // Vérification si le rôle peut être multiple
+            if (!role.getAllowsMultiple()) {
+                boolean hasRole = user.getUserRoles().stream()
+                        .anyMatch(ur -> ur.getRole().getId().equals(dto.roleId()));
+                if (hasRole) {
+                    throw new RoleException.DuplicateMultipleRolesException(user.getUsername(), role.getName());
+                }
+            }
+
+            Department department = departmentRepository.findById(dto.departmentId())
+                    .orElseThrow(() -> new DepartmentException.DepartmentNotFoundException(dto.departmentId()));
+            Context context = contextRepository.findById(dto.contextId())
                     .orElseThrow(() -> new ContextException.ContextNotFoundException(dto.contextId()));
-        }
 
-        // Vérification si le rôle peut être multiple
-        if (!role.isAllowsMultiple()) {
-            boolean hasRole = user.getUserRoles().stream()
-                    .anyMatch(ur -> ur.getRole().getId().equals(dto.roleId()));
-            if (hasRole) {
-                throw new UserRoleException.DuplicateRoleException(user.getUsername(), role.getName());
+            boolean isContextInDepartment = department.getContexts().stream()
+                    .anyMatch(c -> c.getId().equals(context.getId()));
+
+            if (!isContextInDepartment) {
+                throw new ContextException.InvalidContextOperationException(
+                        String.format("Le contexte %s n'appartient pas au département %s", context.getName(), department.getName()));
+            }
+
+            // Création du nouveau UserRole
+            UserRole userRole = UserRole.builder()
+                    .gotUser(user)
+                    .role(role)
+                    .department(department)
+                    .context(context)
+                    .validFrom(dto.validFrom())
+                    .validTo(dto.validTo())
+                    .permissions(new HashSet<>())
+                    .build();
+
+        // Ajout des permissions spécifiques si fournies
+        if (dto.permissionIds() != null) {
+            for (Long permissionId : dto.permissionIds()) {
+                Permission permission = permissionRepository.findById(permissionId)
+                        .orElseThrow(() -> new PermissionException.PermissionNotFoundException(permissionId));
+                // Utilise la nouvelle méthode pour ajouter uniquement les permissions non héritées
+                if (userRole.addDirectPermission(permission)) {
+                    log.debug("Permission directe ajoutée à l'utilisateur {}: {}", 
+                        user.getUsername(), permission.getName());
+                } else {
+                    log.debug("Permission {} déjà présente via Role ou Department pour l'utilisateur {}", 
+                        permission.getName(), user.getUsername());
+                }
             }
         }
 
-        // Création du nouveau UserRole
-        UserRole userRole = UserRole.builder()
-                .gotUser(user)
-                .role(role)
-                .department(department)
-                .context(context)
-                .validFrom(dto.validFrom())
-                .validTo(dto.validTo())
-                .permissions(new HashSet<>())
-                .build();
-
-        // Ajout des permissions spécifiques si fournies
-        if (dto.permissions() != null) {
-            userRole.getPermissions().addAll(dto.permissions());
-        }
-
-        // Validation et fusion des permissions
-        userRole.validatePermissions();
-
         // Sauvegarde du UserRole
         userRole = userRoleRepository.save(userRole);
-        
-        // Mise à jour de la collection de rôles de l'utilisateur
-        user.getUserRoles().add(userRole);
-        userRepository.save(user);
-
         return userRole;
     }
 
-    /**
-     * Met à jour un UserRole existant.
-     * Cette méthode permet de :
-     * 1. Modifier les dates de validité
-     * 2. Modifier le contexte
-     * 3. Modifier les permissions spécifiques
-     *
-     * @param userRoleId ID du UserRole à mettre à jour
-     * @param contextId Nouveau contexte (optionnel)
-     * @param validFrom Nouvelle date de début de validité (optionnel)
-     * @param validTo Nouvelle date de fin de validité (optionnel)
-     * @param specificPermissions Nouvelles permissions spécifiques (optionnel)
-     * @return Le UserRole mis à jour
-     */
     @Transactional
-    public UserRole updateUserRole(Long userRoleId, Long contextId,
-                                 LocalDateTime validFrom, LocalDateTime validTo,
-                                 Set<Permission> specificPermissions) {
-        UserRole userRole = userRoleRepository.findById(userRoleId)
-                .orElseThrow(() -> new UserRoleException.UserRoleNotFoundException(userRoleId));
+    public UserRoleResponseDTO updateUserRoleValidity(Long userId, UserRoleUpdateValidityDTO dto) {
+        return userRoleMapper.toResponseDTO(updateUserRoleValidityEntity(userId, dto));
+    }
 
-        // Mise à jour du contexte si fourni
-        if (contextId != null) {
-            Context context = contextRepository.findById(contextId)
-                    .orElseThrow(() -> new ContextException.ContextNotFoundException(contextId));
-            userRole.setContext(context);
+    @Transactional
+    public UserRole updateUserRoleValidityEntity(Long userId, UserRoleUpdateValidityDTO dto) {
+        validateUsernameUserId(dto.username(), userId);
+
+        UserRole userRole = userRoleRepository.findByUserRoleDetails(
+                userId, dto.roleId(), dto.departmentId(), dto.contextId())
+            .orElseThrow(() -> new UserRoleException.UserRoleNotFoundException(
+                    String.format("[User:%s-Role:%s-Department:%s-Context%s]", dto.username(), dto.roleId(), dto.departmentId(), dto.contextId())));
+        
+        // Vérification de la logique de validité
+        if (dto.validFrom() != null && dto.validTo() != null && dto.validFrom().isAfter(dto.validTo())) {
+            throw new UserRoleException.InvalidValidityPeriodException();
         }
-
-        // Mise à jour des dates de validité
-        userRole.setValidFrom(validFrom);
-        userRole.setValidTo(validTo);
-
-        // Mise à jour des permissions spécifiques si fournies
-        if (specificPermissions != null) {
-            userRole.getPermissions().clear();
-            userRole.getPermissions().addAll(specificPermissions);
-        }
-
-        // Revalidation des permissions
-        userRole.validatePermissions();
-
+        userRole.setValidFrom(dto.validFrom());
+        userRole.setValidTo(dto.validTo());
         return userRoleRepository.save(userRole);
     }
 
-    /**
-     * Supprime un UserRole d'un utilisateur.
-     * Cette méthode vérifie :
-     * 1. Si le UserRole existe
-     * 2. Si l'utilisateur a le droit de supprimer ce rôle
-     *
-     * @param userRoleId ID du UserRole à supprimer
-     */
     @Transactional
-    public void removeUserRole(Long userRoleId) {
-        UserRole userRole = userRoleRepository.findById(userRoleId)
-                .orElseThrow(() -> new UserRoleException.UserRoleNotFoundException(userRoleId));
+    public void removeUserRole(Long userId, UserRoleRemoveDTO dto) {
+        validateUsernameUserId(dto.username(), userId);
 
-        // Suppression de la référence dans l'utilisateur
-        GotUser user = userRole.getGotUser();
-        user.getUserRoles().remove(userRole);
-        userRepository.save(user);
+        UserRole userRole = userRoleRepository.findByUserRoleDetails(
+                userId, dto.roleId(), dto.departmentId(), dto.contextId())
+            .orElseThrow(() -> new UserRoleException.UserRoleNotFoundException(
+                    String.format("[User:%s-Role:%s-Department:%s-Context%s]", userId, dto.roleId(), dto.departmentId(), dto.contextId())));
+        userRoleRepository.deleteById(userRole.getId());
+    }
 
-        // Suppression du UserRole
-        userRoleRepository.delete(userRole);
+    @Transactional
+    public UserRoleResponseDTO assignPermissionToUserRole(Long userId, UserRolePermissionsDTO dto) {
+        return userRoleMapper.toResponseDTO(assignPermissionToUserRoleEntity(userId, dto));
+    }
+
+    @Transactional
+    public UserRole assignPermissionToUserRoleEntity(Long userId, UserRolePermissionsDTO dto) {
+        validateUsernameUserId(dto.username(), userId);
+
+        UserRole userRole = userRoleRepository.findByUserRoleDetails(
+                userId, dto.roleId(), dto.departmentId(), dto.contextId())
+            .orElseThrow(() -> new UserRoleException.UserRoleNotFoundException(
+                    String.format("[User:%s-Role:%s-Department:%s-Context:%s]", userId, dto.roleId(), dto.departmentId(), dto.contextId())));
+        
+        for (Long permissionId : dto.permissionIds()) {
+            Permission permission = permissionRepository.findById(permissionId)
+                .orElseThrow(() -> new PermissionException.PermissionNotFoundException(permissionId));
+            if (!userRole.hasPermission(permission.getName())) {
+                userRole.getPermissions().add(permission);
+            }
+        }
+        return userRoleRepository.save(userRole);
+    }
+
+    @Transactional
+    public UserRoleResponseDTO removePermissionFromUserRole(Long userId, UserRolePermissionsDTO dto) {
+        return userRoleMapper.toResponseDTO(removePermissionFromUserRoleEntity(userId, dto));
+    }
+
+    @Transactional
+    public UserRole removePermissionFromUserRoleEntity(Long userId, UserRolePermissionsDTO dto) {
+        validateUsernameUserId(dto.username(), userId);
+
+        UserRole userRole = userRoleRepository.findByUserRoleDetails(
+                userId, dto.roleId(), dto.departmentId(), dto.contextId())
+            .orElseThrow(() -> new UserRoleException.UserRoleNotFoundException(
+                    String.format("[User:%s-Role:%s-Department:%s-Context%s]", userId, dto.roleId(), dto.departmentId(), dto.contextId())));
+
+        for (Long permissionId : dto.permissionIds()) {
+            Permission permission = permissionRepository.findById(permissionId)
+                .orElseThrow(() -> new PermissionException.PermissionNotFoundException(permissionId));
+            userRole.getPermissions().remove(permission);
+        }
+        return userRoleRepository.save(userRole);
+    }
+
+    @Transactional(readOnly = true)
+    protected GotUser validateUsernameUserId(String username, Long userId) {
+        GotUser user = getUserByUsername(username);
+        if (!userId.equals(user.getId())) {
+            throw new UserException.InvalidUserDataException("L'id de l'utilisateur ne correspond pas au username");
+        }
+        return user;
+    }
+
+    @Transactional(readOnly = true)
+    public boolean existsByEmailVerificationToken(String token) {
+        return userRepository.existsByEmailVerificationToken(token);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean existsByResetPasswordToken(String token) {
+        return userRepository.existsByResetPasswordToken(token);
     }
 }

@@ -4,22 +4,17 @@ import org.got.web.gotweb.user.domain.Context;
 import org.got.web.gotweb.user.domain.Department;
 import org.got.web.gotweb.user.domain.GotUser;
 import org.got.web.gotweb.user.domain.Role;
-import org.got.web.gotweb.user.dto.request.user.response.UserResponseDTO;
-import org.got.web.gotweb.user.dto.request.user.response.UserResponseFullDTO;
+import org.got.web.gotweb.user.dto.user.response.UserResponseDTO;
+import org.got.web.gotweb.user.dto.user.response.UserResponseFullDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
-import org.mapstruct.factory.Mappers;
 
 import java.util.List;
 import java.util.Set;
 
 @Mapper(componentModel = "spring")
 public interface GotUserMapper {
-
-    GotUserMapper INSTANCE = Mappers.getMapper(GotUserMapper.class);
-
-    GotUser toGotUser(UserResponseFullDTO userResponseFullDTO);
 
     @Mapping(source = "roles", target = "roles", qualifiedByName = "rolesToStrings")
     @Mapping(source = "contexts", target = "contexts", qualifiedByName = "contextsToStrings")

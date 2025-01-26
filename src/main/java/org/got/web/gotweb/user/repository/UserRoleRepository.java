@@ -10,20 +10,26 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.Set;
 
 @Repository
 public interface UserRoleRepository extends JpaRepository<UserRole, Long> {
-    Set<UserRole> findByGotUser(GotUser user);
-    Set<UserRole> findByDepartment(Department department);
-    Set<UserRole> findByRole(Role role);
-    Set<UserRole> findByContext(Context context);
-    
+
     @Query("SELECT ur FROM UserRole ur WHERE ur.gotUser = ?1 AND " +
            "(ur.validFrom IS NULL OR ur.validFrom <= ?2) AND " +
            "(ur.validTo IS NULL OR ur.validTo >= ?2)")
     Set<UserRole> findActiveRolesByUser(GotUser user, LocalDateTime now);
-    
-    boolean existsByGotUserAndRoleAndDepartmentAndContext(
-        GotUser user, Role role, Department department, Context context);
+
+    boolean existsByDepartmentId(Long departmentId);
+
+    boolean existsByContextId(Long contextId);
+
+    @Query("SELECT CASE WHEN COUNT(ur) > 0 THEN true ELSE false END FROM UserRole ur JOIN ur.permissions p WHERE p.id = :permissionId")
+    boolean existsByPermissionId(Long permissionId);
+
+    boolean existsByRoleId(Long roleId);
+
+    @Query("SELECT ur FROM UserRole ur WHERE ur.gotUser.id = ?1 AND ur.role.id = ?2 AND ur.department.id = ?3 AND ur.context.id = ?4")
+    Optional<UserRole> findByUserRoleDetails(Long userId, Long roleId, Long departmentId, Long contextId);
 }

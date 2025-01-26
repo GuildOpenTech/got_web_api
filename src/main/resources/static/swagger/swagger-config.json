@@ -1,0 +1,51 @@
+{
+  "urls": [
+    {
+      "url": "/swagger/api-docs",
+      "name": "Got Web ERP API"
+    }
+  ],
+  "configUrl": "/swagger/swagger-config.json",
+  "displayOperationId": false,
+  "filter": true,
+  "operationsSorter": "method",
+  "tagsSorter": "alpha",
+  "tryItOutEnabled": false,
+  "deepLinking": true,
+  "displayRequestDuration": true,
+  "defaultModelsExpandDepth": 0,
+  "defaultModelExpandDepth": 0,
+  "defaultModelRendering": "example",
+  "docExpansion": "none",
+  "showExtensions": false,
+  "showCommonExtensions": false,
+  "syntaxHighlight": {
+    "activate": true,
+    "theme": "monokai"
+  },
+  "responseInterceptor": "function(response) { if (response.url.endsWith('/auth/login') && response.ok) { response.json().then(data => { const token = data.accessToken; window.ui.preauthorizeApiKey('bearerAuth', token);}); } return response; }",
+
+  "persistAuthorization": true,
+  "layout": "StandaloneLayout",
+  "plugins": [
+    "SyntaxHighlight"
+  ],
+  "presets": [
+    "apis",
+    "modals"
+  ],
+  "supportedSubmitMethods": [
+    "get",
+    "put",
+    "post",
+    "delete",
+    "options",
+    "head",
+    "patch",
+    "trace"
+  ],
+  "oauth2RedirectUrl": "http://localhost:8080/swagger/swagger-ui/oauth2-redirect.html",
+  "dom_id": "#swagger-ui",
+  "queryConfigEnabled": true,
+  "showActuator": true
+}

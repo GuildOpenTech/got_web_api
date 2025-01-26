@@ -12,5 +12,7 @@ public enum ContextType {
     FORMATION,       // Contexte lié à une formation
     RH,              // Contexte lié à la gestion des ressources humaines
     COMPTABILITE,    // Contexte lié à la comptabilité
-    JURIDIQUE, ADMINISTRATION,       // Contexte lié à des aspects juridiques
+    JURIDIQUE,       // Contexte lié à des aspects juridiques
+    ADMINISTRATION,  // Contexte lié à l'administration
+    AUTRE;           // Autre contexte
 }

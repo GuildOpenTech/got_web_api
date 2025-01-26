@@ -51,7 +51,7 @@ public class EmailService {
         
         Map<String, Object> variables = new HashMap<>();
         variables.put("user", user);
-        variables.put("resetUrl", appUrl + "/reset-password?token=" + token);
+        variables.put("resetUrl", appUrl + "/reset-password");
         variables.put("appName", appName);
 
         sendTemplatedEmail(user.getEmail(), subject, template, variables);

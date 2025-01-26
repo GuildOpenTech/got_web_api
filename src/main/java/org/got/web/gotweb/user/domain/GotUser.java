@@ -2,44 +2,63 @@ package org.got.web.gotweb.user.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import org.got.web.gotweb.common.annotations.ToLowerCase;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "users")
+@Table(name = "users",
+        indexes = {
+            @Index(name = "idx_users_email", columnList = "email", unique = true),
+            @Index(name = "idx_users_username", columnList = "username", unique = true),
+            @Index(name = "idx_users_email_verification_token", columnList = "email_verification_token")},
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_user_email", columnNames = {"email"}),
+                @UniqueConstraint(name = "uk_user_username", columnNames = {"username"})
+        }
+)
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class GotUser {
+public class GotUser implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "username", unique = true, nullable = false)
+    @ToLowerCase
+    @Column(name = "username", nullable = false)
     private String username;
 
     @Column(name = "password", nullable = false)
     private String password;
 
-    @Column(name = "email", unique = true, nullable = false)
+    @ToLowerCase
+    @Column(name = "email", nullable = false)
     private String email;
 
     @Column(name = "first_name")
@@ -86,8 +105,9 @@ public class GotUser {
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
 
-    @OneToMany(mappedBy = "gotUser")
+    @OneToMany(mappedBy = "gotUser", fetch = FetchType.LAZY)
     @ToString.Exclude
+    @Builder.Default
     private Set<UserRole> userRoles = new HashSet<>();
 
     @PreUpdate
@@ -166,5 +186,29 @@ public class GotUser {
     @Override
     public int hashCode() {
         return getClass().hashCode();
+    }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return getRoles().stream()
+                .map(roleName -> new SimpleGrantedAuthority("ROLE_" + roleName))
+                .toList();
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        //TODO: to implement
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return !isAccountLocked();
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        //TODO: to implement
+        return true;
     }
 }

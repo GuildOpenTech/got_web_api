@@ -14,8 +14,14 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
   security:
     jwt:
-      secret-key: ${JWT_SECRET:votreCleSecreteTresLongueEtComplexePourLaProductionAuMoins256Bits}
-      expiration: ${JWT_EXPIRATION:86400000} # 24 heures en millisecondes
+      keystore:
+        location: classpath:jwt-keystore.p12
+        password: ${JWT_KEYSTORE_PASSWORD:changeit}
+        alias: ${JWT_KEY_ALIAS:got-jwt-key}
+      expiration: ${JWT_EXPIRATION:86400000} # 24 heures
+      refresh-token:
+        expiration: ${JWT_REFRESH_EXPIRATION:604800000} # 7 jours
+      issuer: ${JWT_ISSUER:got-web}
   mail:
     host: localhost
     port: 25
@@ -28,13 +34,37 @@ spring:
           starttls:
             enable: false
             required: false
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+  mvc:
+    webjars-path-pattern: /webjars/**
+    web:
+      resources:
+        static-locations: classpath:/META-INF/resources/,classpath:/resources/,classpath:/static/,classpath:/public/
+
+
+# Configuration du cache
+cache:
+  # Configuration Caffeine
+  caffeine:
+    initial-capacity: ${CACHE_CAFFEINE_INITIAL_CAPACITY:100}
+    maximum-size: ${CACHE_CAFFEINE_MAX_SIZE:10000}
+    expire-after-write: ${CACHE_CAFFEINE_EXPIRE:21600000} # 6 heures
+    expire-after-access: ${CACHE_CAFFEINE_EXPIRE_ACCESS:43200000} # 12 heures
+    record-stats: true
 
 springdoc:
+  version: 3.0.0
   api-docs:
-    path: /api-docs
+    path: /swagger/api-docs
+    version: openapi_3_0
   swagger-ui:
-    path: /swagger-ui.html
-    operationsSorter: method
+    enabled: false
+    path: /swagger/custom-ui
+    config-url: /swagger/swagger-config.json
+
+
 
 app:
   name: GOT ERP
@@ -46,3 +76,4 @@ logging:
   level:
     org.springframework.security: DEBUG
     org.got.web: DEBUG
+    org.springframework.cache: DEBUG

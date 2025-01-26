@@ -1,5 +1,6 @@
 package org.got.web.gotweb.user.repository;
 
+import org.got.web.gotweb.common.annotations.ToLowerCase;
 import org.got.web.gotweb.user.domain.Permission;
 import org.got.web.gotweb.user.domain.PermissionType;
 import org.springframework.data.domain.Page;
@@ -14,10 +15,8 @@ import java.util.Set;
 
 @Repository
 public interface PermissionRepository extends JpaRepository<Permission, Long> {
-    Optional<Permission> findByName(String name);
-    boolean existsByName(String name);
-
-    List<Permission> findByType(PermissionType type);
+    Optional<Permission> findByName(@ToLowerCase String name);
+    boolean existsByName(@ToLowerCase String name);
 
     Set<Permission> findByIdIn(Set<Long> permissionIds);
 

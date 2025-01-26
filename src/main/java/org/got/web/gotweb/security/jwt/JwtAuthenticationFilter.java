@@ -6,56 +6,70 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
-/**
- * Filtre pour intercepter et valider les tokens JWT dans les requêtes
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final JwtTokenProvider tokenProvider;
-    private final UserDetailsService userDetailsService;
+    private static final String BEARER_PREFIX = "Bearer ";
+    private static final String ERROR_HEADER = "X-JWT-Error";
+    private final JwtService jwtService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         try {
-            String jwt = getJwtFromRequest(request);
+            String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+            Authentication existingAuth = SecurityContextHolder.getContext().getAuthentication();
+            log.debug(" [JWT Filter] Authentification existante: {}", 
+                     existingAuth != null ? String.format("Auth présente (authenticated=%s, principal=%s)", 
+                                                       existingAuth.isAuthenticated(), 
+                                                       existingAuth.getPrincipal()) 
+                                        : "Aucune authentification");
 
-            if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
-                String username = tokenProvider.getUsernameFromToken(jwt);
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                
-                UsernamePasswordAuthenticationToken authentication = 
-                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+            if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
+                filterChain.doFilter(request, response);
+                return;
             }
-        } catch (Exception ex) {
-            log.error("Could not set user authentication in security context", ex);
-        }
 
-        filterChain.doFilter(request, response);
+            String token = authHeader.substring(BEARER_PREFIX.length());
+
+            try {
+                var tokenInfo = jwtService.validateToken(token);
+                var authentication = new JwtAuthenticationToken(tokenInfo);
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                
+                filterChain.doFilter(request, response);
+            } catch (Exception e) {
+                log.error(" [JWT Filter] Erreur lors de la validation du token", e);
+                // Removed SecurityContextHolder.clearContext();
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            }
+        } catch (Exception e) {
+            log.error(" [JWT Filter] Erreur inattendue dans JwtAuthenticationFilter", e);
+            // Removed SecurityContextHolder.clearContext();
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        }
     }
 
-    private String getJwtFromRequest(HttpServletRequest request) {
-        String bearerToken = request.getHeader("Authorization");
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
-        }
-        return null;
+    private void setErrorResponse(HttpServletResponse response, String message, HttpStatus status) {
+        log.debug("Configuration de la réponse d'erreur: {} - {}", status, message);
+        response.setHeader(ERROR_HEADER, message);
+        response.setStatus(status.value());
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        return path.startsWith("/api/auth/");
     }
 }

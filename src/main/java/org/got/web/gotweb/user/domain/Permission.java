@@ -7,47 +7,53 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.ManyToMany;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.got.web.gotweb.common.annotations.ToLowerCase;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Objects;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "permissions")
+@Table(name = "permissions", indexes = {
+        @Index(name = "idx_permissions_name", columnList = "name", unique = true)},
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_name_permission", columnNames = {"name"})
+        })
 public class Permission {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true)
+    @ToLowerCase
+    @Column(name = "name", nullable = false)
     private String name;
 
     private String description;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "type", nullable = false, columnDefinition = "VARCHAR(60)")
     private PermissionType type;
 
-    @ManyToMany(mappedBy = "permissions")
-    private Set<Role> roles = new HashSet<>();
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
 
-    @ManyToMany(mappedBy = "permissions")
-    private Set<UserRole> userRoles = new HashSet<>();
+        Permission that = (Permission) o;
+        return id.equals(that.id) && name.equals(that.name);
+    }
 
-    @ManyToMany(mappedBy = "defaultPermissions")
-    private Set<Department> departments = new HashSet<>();
-
-    public boolean isGranted(Context context) {
-        //TODO: Logique de validation contextuelle des permissions
-        return true; // À implémenter selon les règles métier
+    @Override
+    public int hashCode() {
+        return 31 * Objects.hash(id, name);
     }
 }

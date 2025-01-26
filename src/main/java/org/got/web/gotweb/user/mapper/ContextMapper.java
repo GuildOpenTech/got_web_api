@@ -1,15 +1,15 @@
 package org.got.web.gotweb.user.mapper;
 
 import org.got.web.gotweb.user.domain.Context;
-import org.got.web.gotweb.user.dto.response.ContextResponseDTO;
+import org.got.web.gotweb.user.dto.context.response.ContextResponseDTO;
 import org.mapstruct.Mapper;
-import org.mapstruct.factory.Mappers;
+
+import java.util.Set;
 
 @Mapper(componentModel = "spring")
 public interface ContextMapper {
-    ContextMapper INSTANCE = Mappers.getMapper(ContextMapper.class);
 
+    //@Mapping(target = "department", ignore = true)
     ContextResponseDTO toResponseDTO(Context context);
-
-    Context mapToContext(ContextResponseDTO userContext);
+    Set<ContextResponseDTO> toResponseDTO(Set<Context> contexts);
 }

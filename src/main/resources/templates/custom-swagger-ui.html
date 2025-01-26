@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Documentation</title>
+    <link rel="stylesheet" type="text/css" href="../webjars/swagger-ui/4.15.5/swagger-ui.css" />
+</head>
+<body>
+<div id="swagger-ui"></div>
+<script src="../webjars/swagger-ui/4.15.5/swagger-ui-bundle.js"></script>
+<script src="../webjars/swagger-ui/4.15.5/swagger-ui-standalone-preset.js"></script>
+<script>
+    window.onload = function() {
+        const ui = SwaggerUIBundle({
+            url: "/swagger/api-docs",
+            domNode: document.getElementById('swagger-ui'),
+            deepLinking: true,
+            presets: [
+                SwaggerUIBundle.presets.apis,
+                SwaggerUIStandalonePreset
+            ],
+            plugins: [
+                SwaggerUIBundle.plugins.DownloadUrl
+            ],
+            layout: "BaseLayout",
+            responseInterceptor: function(response) {
+                // Vérifie si c'est l'endpoint de login
+                if (response.url.includes('/api/auth/login')) {
+                    try {
+                        // La réponse est déjà un objet JSON
+                        const data = JSON.parse(response.text);
+
+                        if (data.accessToken) {
+                            console.log('Access token found:', data.accessToken);
+                            // Construit le token avec le type
+                            const token = `${data.accessToken}`;
+                            // Configure l'autorisation
+                            ui.preauthorizeApiKey('bearerAuth', token);
+                        }
+                    } catch (error) {
+                        console.error('Error processing login response:', error);
+                    }
+                }
+                return response;
+            }
+        });
+
+        window.ui = ui;
+    }
+</script>
+</body>
+</html>
