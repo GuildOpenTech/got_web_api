@@ -49,10 +49,10 @@ cache:
   # Configuration Caffeine
   caffeine:
     initial-capacity: ${CACHE_CAFFEINE_INITIAL_CAPACITY:100}
-    maximum-size: ${CACHE_CAFFEINE_MAX_SIZE:10000}
+    maximum-size: ${CACHE_CAFFEINE_MAX_SIZE:10000} # 10 000 éléments
     expire-after-write: ${CACHE_CAFFEINE_EXPIRE:21600000} # 6 heures
     expire-after-access: ${CACHE_CAFFEINE_EXPIRE_ACCESS:43200000} # 12 heures
-    record-stats: true
+    record-stats: false # Activer les statistiques
 
 springdoc:
   version: 3.0.0
@@ -64,7 +64,12 @@ springdoc:
     path: /swagger/custom-ui
     config-url: /swagger/swagger-config.json
 
-
+management:
+  endpoints:
+    web:
+      base-path: /api/actuator
+      exposure:
+        include: "health,info"
 
 app:
   name: GOT ERP
@@ -75,5 +80,5 @@ app:
 logging:
   level:
     org.springframework.security: DEBUG
-    org.got.web: DEBUG
+    org.got.web.gotweb: TRACE
     org.springframework.cache: DEBUG

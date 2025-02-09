@@ -8,7 +8,6 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Stream;
 
 /**
  * Token d'authentification JWT personnalisé
@@ -43,13 +42,13 @@ public class JwtAuthenticationToken extends AbstractAuthenticationToken {
         Set<GrantedAuthority> authorities = new HashSet<>();
         
         // Ajoute les rôles avec le préfixe ROLE_
-        Stream.of(tokenInfo.claims().roles())
+        tokenInfo.claims().roles().stream()
             .map(role -> new SimpleGrantedAuthority(role.startsWith("ROLE_") ? role : "ROLE_" + role))
             .forEach(authorities::add);
         
         // Ajoute les permissions directement (sans préfixe)
-        Stream.of(tokenInfo.claims().permissions())
-            .map(SimpleGrantedAuthority::new)
+        tokenInfo.claims().permissions().stream()
+            .map(perm -> new SimpleGrantedAuthority(perm.startsWith("PERM_") ? perm : "PERM_" + perm))
             .forEach(authorities::add);
         
         return authorities;

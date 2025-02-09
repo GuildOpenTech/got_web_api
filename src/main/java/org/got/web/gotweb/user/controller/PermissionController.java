@@ -1,12 +1,13 @@
 package org.got.web.gotweb.user.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.got.web.gotweb.user.criteria.PermissionSearchCriteria;
 import org.got.web.gotweb.user.dto.permission.request.PermissionCreateDTO;
 import org.got.web.gotweb.user.dto.permission.request.PermissionUpdateDTO;
 import org.got.web.gotweb.user.dto.permission.response.PermissionResponseDTO;
+import org.got.web.gotweb.user.dto.permission.search.PermissionSearchCriteria;
 import org.got.web.gotweb.user.service.PermissionService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -31,22 +32,26 @@ public class PermissionController {
 
     private final PermissionService permissionService;
 
+    @Operation(summary = "Créer une permission")
     @PostMapping
     public ResponseEntity<PermissionResponseDTO> createPermission(@RequestBody PermissionCreateDTO permissionCreateDTO) {
         return ResponseEntity.ok(permissionService.createPermissionDTO(permissionCreateDTO));
     }
 
+    @Operation(summary = "Mettre à jour une permission")
     @PutMapping("/{permissionId}")
     public ResponseEntity<PermissionResponseDTO> updatePermission(@PathVariable Long permissionId, @RequestBody PermissionUpdateDTO permissionUpdateDTO) {
         return ResponseEntity.ok(permissionService.updatePermissionDTO(permissionId, permissionUpdateDTO));
     }
 
+    @Operation(summary = "Supprimer une permission")
     @DeleteMapping("/{permissionId}")
     public ResponseEntity<Void> deletePermission(@PathVariable Long permissionId) {
         permissionService.deletePermission(permissionId);
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "Rechercher des permissions")
     @GetMapping
     public ResponseEntity<Page<PermissionResponseDTO>> searchPermissions(
             @Valid PermissionSearchCriteria criteria,
@@ -59,11 +64,13 @@ public class PermissionController {
         return ResponseEntity.ok(permissions);
     }
 
+    @Operation(summary = "Récupérer une permission par son ID")
     @GetMapping("/{permissionId}")
     public ResponseEntity<PermissionResponseDTO> getPermissionById(@PathVariable Long permissionId) {
         return ResponseEntity.ok(permissionService.getPermissionById(permissionId));
     }
 
+    @Operation(summary = "Récupérer une permission par son nom")
     @GetMapping("/name/{permissionName}")
     public ResponseEntity<PermissionResponseDTO> getPermissionByName(@PathVariable String permissionName) {
         return ResponseEntity.ok(permissionService.getPermissionByName(permissionName));

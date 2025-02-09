@@ -4,18 +4,18 @@ import lombok.RequiredArgsConstructor;
 import org.got.web.gotweb.exception.DepartmentException;
 import org.got.web.gotweb.exception.DepartmentException.DepartmentNotFoundException;
 import org.got.web.gotweb.exception.PermissionException;
-import org.got.web.gotweb.user.criteria.DepartmentSearchCriteria;
 import org.got.web.gotweb.user.domain.Department;
 import org.got.web.gotweb.user.domain.Permission;
 import org.got.web.gotweb.user.dto.department.request.DepartmentCreateDTO;
 import org.got.web.gotweb.user.dto.department.request.DepartmentUpdateDTO;
 import org.got.web.gotweb.user.dto.department.response.DepartmentResponseDTO;
+import org.got.web.gotweb.user.dto.department.search.DepartmentSearchCriteria;
+import org.got.web.gotweb.user.dto.department.search.DepartmentSpecification;
 import org.got.web.gotweb.user.mapper.DepartmentMapper;
 import org.got.web.gotweb.user.repository.ContextRepository;
 import org.got.web.gotweb.user.repository.DepartmentRepository;
 import org.got.web.gotweb.user.repository.PermissionRepository;
 import org.got.web.gotweb.user.repository.UserRoleRepository;
-import org.got.web.gotweb.user.specification.DepartmentSpecification;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -162,9 +162,7 @@ public class DepartmentService {
      */
     @Transactional(readOnly = true)
     public DepartmentResponseDTO getDepartmentById(Long id) {
-        return departmentRepository.findById(id)
-            .map(departmentMapper::toResponseDTO)
-            .orElseThrow(() -> new DepartmentNotFoundException(id));
+        return departmentMapper.toResponseDTO(getDepartmentEntityById(id));
     }
 
     /**

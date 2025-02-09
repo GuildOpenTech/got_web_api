@@ -1,9 +1,6 @@
 package org.got.web.gotweb.user.repository;
 
-import org.got.web.gotweb.user.domain.Context;
-import org.got.web.gotweb.user.domain.Department;
 import org.got.web.gotweb.user.domain.GotUser;
-import org.got.web.gotweb.user.domain.Role;
 import org.got.web.gotweb.user.domain.UserRole;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

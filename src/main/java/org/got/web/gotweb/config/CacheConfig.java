@@ -35,13 +35,13 @@ public class CacheConfig {
     public static final String CACHE_CONTEXTS = "contexts";
 
     private static final List<String> CACHE_NAMES = Arrays.asList(
-            CACHE_REVOKED_TOKENS,
-            CACHE_USER_PERMISSIONS,
-            CACHE_USER_ROLES,
-            CACHE_ROLES,
-            CACHE_PERMISSIONS,
-            CACHE_DEPARTMENTS,
-            CACHE_CONTEXTS
+            CACHE_REVOKED_TOKENS
+//            CACHE_USER_PERMISSIONS,
+//            CACHE_USER_ROLES,
+//            CACHE_ROLES,
+//            CACHE_PERMISSIONS,
+//            CACHE_DEPARTMENTS,
+//            CACHE_CONTEXTS
     );
 
     @Getter
@@ -51,7 +51,7 @@ public class CacheConfig {
         private int maximumSize = 10000;
         private long expireAfterWrite = 21600000; // 6 heures
         private long expireAfterAccess = 43200000; // 12 heures
-        private boolean recordStats = true;
+        private boolean recordStats = false; // Désactivé par défaut pour des raisons de performances
     }
 
     private CaffeineProperties caffeine = new CaffeineProperties();

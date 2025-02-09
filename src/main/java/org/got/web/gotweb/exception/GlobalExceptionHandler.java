@@ -39,14 +39,14 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ResponseEntity<ApiError> handleAuthenticationException(AuthenticationException ex) {
         log.error("Erreur d'authentification", ex);
-        return buildErrorResponse(HttpStatus.UNAUTHORIZED, "Erreur d'authentification: " + ex.getMessage());
+        return buildErrorResponse(HttpStatus.UNAUTHORIZED, ex.getMessage());
     }
 
-    @ExceptionHandler(AccessDeniedException.class)
+    @ExceptionHandler(value = { ForbiddenException.class, AccessDeniedException.class })
     @ResponseStatus(HttpStatus.FORBIDDEN)
     public ResponseEntity<ApiError> handleAccessDeniedException(AccessDeniedException ex) {
         log.error("Accès refusé", ex);
-        return buildErrorResponse(HttpStatus.FORBIDDEN, "Accès refusé: " + ex.getMessage());
+        return buildErrorResponse(HttpStatus.FORBIDDEN, ex.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

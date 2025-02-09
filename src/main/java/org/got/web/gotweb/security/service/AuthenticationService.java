@@ -9,7 +9,6 @@ import org.got.web.gotweb.security.dto.RefreshTokenRequest;
 import org.got.web.gotweb.security.jwt.JwtService;
 import org.got.web.gotweb.security.jwt.JwtTokens;
 import org.got.web.gotweb.user.domain.GotUser;
-import org.got.web.gotweb.user.domain.Permission;
 import org.got.web.gotweb.user.domain.UserRole;
 import org.got.web.gotweb.user.repository.GotUserRepository;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -19,6 +18,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 /**
  * Service pour gérer l'authentification des utilisateurs
@@ -55,8 +56,6 @@ public class AuthenticationService {
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
             // Récupère l'utilisateur
-//            GotUser user = userRepository.findByUsername(loginRequest.getUsername())
-//                    .orElseThrow(() -> new AuthenticationException("Utilisateur non trouvé : " + loginRequest.getUsername()));
             GotUser user = (GotUser) authentication.getPrincipal();
 
             // Crée les claims utilisateur
@@ -126,16 +125,16 @@ public class AuthenticationService {
      */
     private JwtTokens.UserClaims createUserClaims(GotUser user) {
         // Extrait les rôles avec leur contexte
-        String[] roles = user.getUserRoles().stream()
+        List<String> roles = user.getUserRoles().stream()
                 .map(this::formatRole)
-                .toArray(String[]::new);
+                .toList();
 
         // Extrait toutes les permissions uniques de l'utilisateur
-        String[] permissions = user.getUserRoles().stream()
+        List<String> permissions = user.getUserRoles().stream()
                 .flatMap(role -> role.getAllPermissions().stream())
-                .map(Permission::getName)
+                .map(p -> "PERM_" + p.getId())
                 .distinct()
-                .toArray(String[]::new);
+                .toList();
 
         return new JwtTokens.UserClaims(
                 user.getId(),
@@ -147,11 +146,11 @@ public class AuthenticationService {
 
     /**
      * Formate un rôle utilisateur avec son contexte
-     * Format: ROLE_NAME:DEPARTMENT_ID:CONTEXT_ID
+     * Format: ROLE_ID:DEPARTMENT_ID:CONTEXT_ID
      */
     private String formatRole(UserRole userRole) {
         return String.format("ROLE_%s:%d:%d",
-                userRole.getRole().getName(),
+                userRole.getRole().getId(),
                 userRole.getDepartment().getId(),
                 userRole.getContext().getId());
     }

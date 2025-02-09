@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static org.got.web.gotweb.config.CacheConfig.CACHE_REVOKED_TOKENS;
+
 /**
  * Service de gestion des tokens JWT
  * Gère la génération, validation et révocation des tokens
@@ -35,7 +37,7 @@ public class JwtService {
     private static final String TOKEN_TYPE_CLAIM = "type";
     private static final String TOKEN_TYPE_ACCESS = "ACCESS";
     private static final String TOKEN_TYPE_REFRESH = "REFRESH";
-    private static final String REVOKED_TOKENS_CACHE = "revokedTokens";
+
 
     private final JwtConfig jwtConfig;
     private final KeyPair keyPair;
@@ -44,7 +46,7 @@ public class JwtService {
     public JwtService(JwtConfig jwtConfig, KeyPair keyPair, CacheManager cacheManager) {
         this.jwtConfig = jwtConfig;
         this.keyPair = keyPair;
-        this.revokedTokensCache = cacheManager.getCache(REVOKED_TOKENS_CACHE);
+        this.revokedTokensCache = cacheManager.getCache(CACHE_REVOKED_TOKENS );
         if (this.revokedTokensCache == null) {
             throw new TokenException("Cache 'revokedTokens' non configuré");
         }
@@ -60,22 +62,10 @@ public class JwtService {
     public JwtTokens.TokenPair generateTokenPair(Object principal, JwtTokens.UserClaims claims) {
         String subject = principal instanceof UserDetails ? 
                 ((UserDetails) principal).getUsername() : principal.toString();
-
         // Génère l'access token
-        String accessToken = generateToken(
-                subject,
-                claims,
-                TOKEN_TYPE_ACCESS,
-                jwtConfig.getExpiration()
-        );
-
+        String accessToken = generateToken(subject, claims, TOKEN_TYPE_ACCESS, jwtConfig.getExpiration());
         // Génère le refresh token
-        String refreshToken = generateToken(
-                subject,
-                claims,
-                TOKEN_TYPE_REFRESH,
-                jwtConfig.getRefreshToken().getExpiration()
-        );
+        String refreshToken = generateToken(subject, claims, TOKEN_TYPE_REFRESH, jwtConfig.getRefreshToken().getExpiration());
 
         return new JwtTokens.TokenPair(accessToken, refreshToken);
     }
@@ -119,41 +109,28 @@ public class JwtService {
      */
     public JwtTokens.TokenInfo validateToken(String token) {
         try {
-            log.debug("Début de la validation du token JWT");
-            log.debug("Token reçu: {}", token);
-            
             Claims claims = parseToken(token);
-            log.debug("Token parsé avec succès. Claims: {}", claims);
-            
             // Vérifie si le token est révoqué
             String jti = claims.getId();
-            log.debug("Vérification de la révocation du token avec JTI: {}", jti);
             if (isTokenRevoked(jti)) {
-                log.warn("Token révoqué trouvé avec JTI: {}", jti);
                 throw new TokenException("Token révoqué");
             }
 
             // Vérifie le type de token
             String tokenType = claims.get(TOKEN_TYPE_CLAIM, String.class);
-            log.debug("Type de token: {}", tokenType);
             if (tokenType == null) {
-                log.warn("Type de token manquant dans les claims");
                 throw new TokenException("Type de token manquant");
             }
 
             // Vérifie l'émetteur
             String issuer = claims.getIssuer();
-            log.debug("Émetteur du token: {}, attendu: {}", issuer, jwtConfig.getIssuer());
             if (!jwtConfig.getIssuer().equals(issuer)) {
-                log.warn("Émetteur du token invalide: {}", issuer);
                 throw new TokenException("Émetteur du token invalide");
             }
 
             // Vérifie la présence des claims obligatoires
             Long userId = claims.get(USER_ID_CLAIM, Long.class);
-            log.debug("ID utilisateur extrait: {}", userId);
             if (userId == null) {
-                log.warn("ID utilisateur manquant dans les claims");
                 throw new TokenException("ID utilisateur manquant");
             }
 
@@ -162,20 +139,12 @@ public class JwtService {
             List<String> roles = claims.get(ROLES_CLAIM, List.class);
             @SuppressWarnings("unchecked")
             List<String> permissions = claims.get(PERMISSIONS_CLAIM, List.class);
-            log.debug("Rôles extraits: {}", roles);
-            log.debug("Permissions extraites: {}", permissions);
 
             if (roles == null || permissions == null) {
-                log.warn("Rôles ou permissions manquants dans les claims");
                 throw new TokenException("Rôles ou permissions manquants");
             }
 
-            JwtTokens.UserClaims userClaims = new JwtTokens.UserClaims(
-                userId,
-                claims.getSubject(),
-                roles.toArray(new String[0]),
-                permissions.toArray(new String[0])
-            );
+            JwtTokens.UserClaims userClaims = new JwtTokens.UserClaims(userId, claims.getSubject(), roles, permissions);
 
             return new JwtTokens.TokenInfo(
                 claims.getSubject(),
@@ -202,17 +171,12 @@ public class JwtService {
      */
     private Claims parseToken(String token) {
         try {
-            log.debug("Début du parsing du token JWT");
             var jwtParser = Jwts.parser()
                     .verifyWith(keyPair.getPublic())
                     .build();
-            log.debug("Parser JWT configuré avec la clé publique");
-            
-            var claims = jwtParser.parseSignedClaims(token).getPayload();
-            log.debug("Token parsé avec succès");
-            return claims;
+
+            return jwtParser.parseSignedClaims(token).getPayload();
         } catch (Exception e) {
-            log.error("Erreur lors du parsing du token", e);
             throw new TokenException("Erreur lors du parsing du token", e);
         }
     }
@@ -262,10 +226,7 @@ public class JwtService {
                 userRevokeKey,
                 Instant.now().plusMillis(jwtConfig.getRefreshToken().getExpiration())
             ));
-
-            log.info("Tous les tokens de l'utilisateur {} ont été révoqués", username);
         } catch (Exception e) {
-            log.error("Erreur lors de la révocation des tokens de l'utilisateur {}", username);
             throw new TokenException("Erreur lors de la révocation des tokens", e);
         }
     }
@@ -273,16 +234,14 @@ public class JwtService {
     /**
      * Vérifie si un token est révoqué
      * 
-     * @param jti ID unique du token
+     * @param token ID unique du token
      * @return true si le token est révoqué
      */
-    public boolean isTokenRevoked(String jti) {
+    public boolean isTokenRevoked(String token) {
         try {
-            log.debug("Vérification de la révocation du token avec JTI: {}", jti);
-            var revokedToken = revokedTokensCache.get(jti, JwtTokens.RevokedToken.class);
+            var revokedToken = revokedTokensCache.get(token, JwtTokens.RevokedToken.class);
             return revokedToken != null && revokedToken.expiresAt().isAfter(Instant.now());
         } catch (Exception e) {
-            log.warn("Erreur lors de la vérification de la révocation: {}", e.getMessage());
             return false;
         }
     }

@@ -1,6 +1,7 @@
 package org.got.web.gotweb.security.jwt;
 
 import java.time.Instant;
+import java.util.List;
 
 /**
  * Records pour la gestion des tokens JWT
@@ -24,8 +25,8 @@ public sealed interface JwtTokens {
     record UserClaims(
             Long userId,
             String username,
-            String[] roles,
-            String[] permissions
+            List<String> roles,
+            List<String> permissions
     ) implements JwtTokens {}
 
     /**
